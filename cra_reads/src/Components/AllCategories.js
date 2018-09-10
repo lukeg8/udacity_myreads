@@ -1,8 +1,6 @@
 import React, { Component } from "react";
-import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
-import { handleInitialCategories } from "../Actions/Categories";
-import { Link } from "react-router-dom";
+import { Link, withRouter } from "react-router-dom";
 
 import styled from "react-emotion";
 
@@ -20,9 +18,6 @@ const LI = styled("li")`
 `;
 
 class AllCategories extends Component {
-    componentDidMount() {
-        this.props.handleInitialCategories();
-    }
     render() {
         const { Categories } = this.props;
         const CategoriesDisplay = Categories.map(category => {
@@ -53,11 +48,4 @@ function mapStateToProps({ Categories }) {
     };
 }
 
-function mapDispatchToProps(dispatch) {
-    return bindActionCreators({ handleInitialCategories }, dispatch);
-}
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps
-)(AllCategories);
+export default withRouter(connect(mapStateToProps)(AllCategories));

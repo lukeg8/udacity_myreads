@@ -1,16 +1,15 @@
 import React, { Component } from "react";
 import {
-    getComment,
-    deleteComment,
-    editComment,
-    voteCommentUp,
-    voteCommentDown
-} from "../utils/API";
-import { bindActionCreators } from "redux";
-import { connect } from "react-redux";
-import { toggleStateChange } from "../Actions/StateChange";
+    _deleteComment,
+    _editComment,
+    _voteCommentUp,
+    _voteCommentDown
+} from "../Actions/Comments";
+import { withRouter } from "react-router-dom";
 
 import styled from "react-emotion";
+import { bindActionCreators } from "redux";
+import { connect } from "react-redux";
 
 const Container = styled("div")`
     display: flex;
@@ -35,69 +34,48 @@ const Button = styled("button")``;
 
 class Comment extends Component {
     state = {
-        comment: "",
         edit: false,
-        voteStatus: false
-    };
-    getCommentFunc = () => {
-        getComment(this.props.commentID).then(comment => {
-            this.setState({ comment });
-        });
+        body: ""
     };
     componentDidMount() {
-        this.getCommentFunc();
-    }
-    componentDidUpdate(prevProps, prevState) {
-        if (this.state.voteStatus !== prevState.voteStatus) {
-            this.getCommentFunc();
-        }
+        this.setState({
+            body: this.props.comment.body
+        });
     }
     handleVote = voteUpDown => {
         switch (voteUpDown) {
             case "upVOTE":
-                voteCommentUp(this.props.commentID).then(() => {
-                    this.setState(prevState => ({
-                        voteStatus: !prevState.voteStatus
-                    }));
-                });
+                this.props._voteCommentUp(this.props.comment.id);
                 break;
             case "downVOTE":
-                voteCommentDown(this.props.commentID).then(() => {
-                    this.setState(prevState => ({
-                        voteStatus: !prevState.voteStatus
-                    }));
-                });
+                this.props._voteCommentDown(this.props.comment.id);
                 break;
             default:
                 break;
         }
     };
     handleDeleteComment = () => {
-        deleteComment(this.state.comment.id).then(() => {
-            this.props.toggleStateChange();
-        });
+        this.props._deleteComment(this.props.comment.id);
     };
     handleEditComment = () => {
         this.setState({ edit: true });
     };
     handleSaveComment = event => {
         event.preventDefault();
-        editComment(this.state.comment.id, {
-            timestamp: Date.now(),
-            body: this.state.comment.body
-        }).then(() => this.setState({ edit: false }));
+        this.props
+            ._editComment(this.props.comment.id, {
+                timestamp: Date.now(),
+                body: this.state.body
+            })
+            .then(() => this.setState({ edit: false }));
     };
     handleTextPostsChange = event => {
-        const newComment = {
-            ...this.state.comment,
-            body: event.target.value
-        };
         this.setState({
-            comment: newComment
+            body: event.target.value
         });
     };
     render() {
-        const { timestamp, body, author, voteScore } = this.state.comment;
+        const { timestamp, body, author, voteScore } = this.props.comment;
         return (
             <Container>
                 <ContainerRow>
@@ -117,7 +95,8 @@ class Comment extends Component {
                                     maxLength="100"
                                     placeholder="Posts Body go here"
                                     onChange={this.handleTextPostsChange}
-                                    value={this.state.comment.body}
+                                    value={this.state.body}
+                                    name="body"
                                 />
                                 <button
                                     type="submit"
@@ -149,10 +128,27 @@ class Comment extends Component {
     }
 }
 
-function mapDispatchToProps(dispatch) {
-    return bindActionCreators({ toggleStateChange }, dispatch);
+function mapStateToProps({ Comments }, { commentID }) {
+    const comment = Comments[commentID];
+    return {
+        comment
+    };
 }
-export default connect(
-    null,
-    mapDispatchToProps
-)(Comment);
+
+function mapDispatchToProps(dispatch) {
+    return bindActionCreators(
+        {
+            _deleteComment,
+            _editComment,
+            _voteCommentUp,
+            _voteCommentDown
+        },
+        dispatch
+    );
+}
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(Comment)
+);

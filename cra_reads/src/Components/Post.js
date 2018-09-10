@@ -1,17 +1,15 @@
 import React, { Component } from "react";
 import { Link } from "react-router-dom";
 import {
-    getPost,
-    editPost,
-    deletePost,
-    votePostUP,
-    votePostDOWN
-} from "../utils/API";
-import { bindActionCreators } from "redux";
-import { connect } from "react-redux";
-import { toggleStateChange } from "../Actions/StateChange";
+    _editPost,
+    _deletePost,
+    _votePostUP,
+    _votePostDOWN
+} from "../Actions/Posts";
 import { withRouter } from "react-router-dom";
 import styled from "react-emotion";
+import { connect } from "react-redux";
+import { bindActionCreators } from "redux";
 
 const Container = styled("div")`
     display: flex;
@@ -40,30 +38,12 @@ const Button = styled("button")`
 
 class Post extends Component {
     state = {
-        post: "",
         edit: false,
-        voteStatus: false
+        title: "",
+        body: ""
     };
-    getPostFunc = postID => {
-        getPost(postID).then(post => {
-            this.setState({ post });
-        });
-    };
-    componentDidMount() {
-        const { postID } = this.props;
-        if (postID) {
-            this.getPostFunc(postID);
-        }
-    }
-    componentDidUpdate(prevProps, prevState) {
-        if (this.state.voteStatus !== prevState.voteStatus) {
-            const { postID } = prevProps;
-            this.getPostFunc(postID);
-        }
-    }
     handleDeletePost = () => {
-        deletePost(this.state.post.id).then(() => {
-            this.props.toggleStateChange();
+        this.props._deletePost(this.props.post.id).then(() => {
             this.props.history.push("/");
         });
     };
@@ -71,126 +51,161 @@ class Post extends Component {
         this.setState({ edit: true });
     };
     handleUp = () => {
-        votePostUP(this.state.post.id).then(() => {
-            this.setState(prevState => ({ voteStatus: !prevState.voteStatus }));
-        });
+        this.props._votePostUP(this.props.post.id);
     };
     handleDown = () => {
-        votePostDOWN(this.state.post.id).then(() => {
-            this.setState(prevState => ({ voteStatus: !prevState.voteStatus }));
-        });
+        this.props._votePostDOWN(this.props.post.id);
     };
     handleSavePost = event => {
         event.preventDefault();
-        editPost(this.state.post.id, {
-            title: this.state.post.title,
-            body: this.state.post.body
-        }).then(() => this.setState({ edit: false }));
+        this.props
+            ._editPost(this.props.post.id, {
+                title: this.state.title,
+                body: this.state.body
+            })
+            .then(() => this.setState({ edit: false }));
     };
     handleTextPostsChange = event => {
-        const newPost = {
-            ...this.state.post,
-            [event.target.name]: event.target.value
-        };
         this.setState({
-            post: newPost
+            [event.target.name]: event.target.value
         });
     };
+    setPropState = () => {
+        this.setState({
+            title: this.props.post.title,
+            body: this.props.post.body
+        });
+    };
+    componentDidUpdate(prevProps, prevState) {
+        if (prevProps.post !== this.props.post) {
+            this.setPropState();
+        }
+    }
+    componentDidMount() {
+        if (this.props.post) {
+            this.setPropState();
+        }
+    }
     render() {
-        const {
-            id,
-            timestamp,
-            title,
-            body,
-            author,
-            category,
-            voteScore
-        } = this.state.post;
+        if (this.props.post) {
+            const {
+                id,
+                timestamp,
+                title,
+                body,
+                author,
+                category,
+                voteScore
+            } = this.props.post;
 
-        return (
-            <Container>
-                {this.state.post ? (
-                    <ContainerRow>
-                        <ContainerColumn
-                            style={{
-                                alignItems: "stretch",
-                                justifyContent: "space-between",
-                                width: "100px"
-                            }}
-                        >
-                            <button onClick={this.handleUp}>UP</button>
-                            {`${voteScore}`}
-                            <button onClick={this.handleDown}>DOWN</button>
-                        </ContainerColumn>
-                        {this.state.edit ? (
-                            <ContainerColumn>
-                                <form onSubmit={this.handleSavePost}>
-                                    <ContainerRow>
-                                        <input
-                                            type="text"
-                                            onChange={
-                                                this.handleTextPostsChange
-                                            }
-                                            value={this.state.post.title}
-                                            name="title"
-                                        />
-                                    </ContainerRow>
-                                    <ContainerRow>
-                                        <textarea
-                                            maxLength="100"
-                                            placeholder="Posts Body go here"
-                                            onChange={
-                                                this.handleTextPostsChange
-                                            }
-                                            value={this.state.post.body}
-                                            name="body"
-                                        />
-                                    </ContainerRow>
-                                    <ContainerRow>
-                                        <button
-                                            type="submit"
-                                            disabled={this.state.body === ""}
-                                        >
-                                            SAVE
-                                        </button>
-                                    </ContainerRow>
-                                </form>
+            return (
+                <Container>
+                    {this.props.post ? (
+                        <ContainerRow>
+                            <ContainerColumn
+                                style={{
+                                    alignItems: "stretch",
+                                    justifyContent: "space-between",
+                                    width: "100px"
+                                }}
+                            >
+                                <button onClick={this.handleUp}>UP</button>
+                                {`${voteScore}`}
+                                <button onClick={this.handleDown}>DOWN</button>
                             </ContainerColumn>
-                        ) : (
-                            <ContainerColumn>
-                                <ContainerRow>
-                                    <Link
-                                        to={`/posts/${id}`}
-                                    >{`${title}`}</Link>
-                                </ContainerRow>
-                                <ContainerRow>{`${body}`}</ContainerRow>
-                                <ContainerRow style={{ color: "red" }}>
-                                    {`Written BY: ${author} - ON - ` +
-                                        new Date(timestamp)}
-                                </ContainerRow>
-                                <ContainerRow>
-                                    <Button onClick={this.handleEditPost}>
-                                        EDIT
-                                    </Button>
-                                    <Button onClick={this.handleDeletePost}>
-                                        DELETE
-                                    </Button>
-                                    {`[CATEGORY - ${category}]`}
-                                </ContainerRow>
-                            </ContainerColumn>
-                        )}
-                    </ContainerRow>
-                ) : (
-                    "NO POST"
-                )}
-            </Container>
-        );
+                            {this.state.edit ? (
+                                <ContainerColumn>
+                                    <form onSubmit={this.handleSavePost}>
+                                        <ContainerRow>
+                                            <input
+                                                type="text"
+                                                onChange={
+                                                    this.handleTextPostsChange
+                                                }
+                                                value={this.state.title}
+                                                name="title"
+                                            />
+                                        </ContainerRow>
+                                        <ContainerRow>
+                                            <textarea
+                                                maxLength="100"
+                                                placeholder="Posts Body go here"
+                                                onChange={
+                                                    this.handleTextPostsChange
+                                                }
+                                                value={this.state.body}
+                                                name="body"
+                                            />
+                                        </ContainerRow>
+                                        <ContainerRow>
+                                            <button
+                                                type="submit"
+                                                disabled={
+                                                    this.state.body === "" ||
+                                                    this.state.title === ""
+                                                }
+                                            >
+                                                SAVE
+                                            </button>
+                                        </ContainerRow>
+                                    </form>
+                                </ContainerColumn>
+                            ) : (
+                                <ContainerColumn>
+                                    <ContainerRow>
+                                        <Link
+                                            to={`/posts/${id}`}
+                                        >{`${title}`}</Link>
+                                    </ContainerRow>
+                                    <ContainerRow>{`${body}`}</ContainerRow>
+                                    <ContainerRow style={{ color: "red" }}>
+                                        {`Written BY: ${author} - ON - ` +
+                                            new Date(timestamp)}
+                                    </ContainerRow>
+                                    <ContainerRow>
+                                        <Button onClick={this.handleEditPost}>
+                                            EDIT
+                                        </Button>
+                                        <Button onClick={this.handleDeletePost}>
+                                            DELETE
+                                        </Button>
+                                        {`[CATEGORY - ${category}]`}
+                                    </ContainerRow>
+                                </ContainerColumn>
+                            )}
+                        </ContainerRow>
+                    ) : (
+                        "NO POST"
+                    )}
+                </Container>
+            );
+        } else {
+            return <div>NOPOST</div>;
+        }
     }
 }
-function mapDispatchToProps(dispatch) {
-    return bindActionCreators({ toggleStateChange }, dispatch);
+
+function mapStateToProps({ Posts }, { postID }) {
+    const post = Posts[postID];
+    return {
+        post
+    };
 }
-export default connect(
-    null,
-    mapDispatchToProps
-)(withRouter(Post));
+
+function mapDispatchToProps(dispatch) {
+    return bindActionCreators(
+        {
+            _editPost,
+            _deletePost,
+            _votePostDOWN,
+            _votePostUP
+        },
+        dispatch
+    );
+}
+export default withRouter(
+    connect(
+        mapStateToProps,
+        mapDispatchToProps
+    )(Post)
+);

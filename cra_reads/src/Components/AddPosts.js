@@ -1,10 +1,9 @@
 import React, { Component } from "react";
 import { connect } from "react-redux";
 import uuidv4 from "uuid/v4";
-import { setPost } from "../utils/API";
 import { withRouter } from "react-router-dom";
 import { bindActionCreators } from "redux";
-import { toggleStateChange } from "../Actions/StateChange";
+import { _setPost } from "../Actions/Posts";
 
 import styled from "react-emotion";
 
@@ -41,11 +40,13 @@ class AddPost extends Component {
             title: this.state.title,
             body: this.state.body,
             author: this.state.author,
-            category: this.state.category
+            category: this.state.category,
+            voteScore: 1,
+            deleted: false,
+            commentCount: 0
         };
-        setPost(postObj).then(() => {
+        this.props._setPost(postObj).then(() => {
             this.clearState();
-            this.props.toggleStateChange();
         });
     };
     handleTextPostsChange = event => {
@@ -120,10 +121,10 @@ function mapStateToProps({ Categories }, { match }) {
     };
 }
 function mapDispatchToProps(dispatch) {
-    return bindActionCreators({ toggleStateChange }, dispatch);
+    return bindActionCreators({ _setPost }, dispatch);
 }
 
-export default connect(
+export default withRouter(connect(
     mapStateToProps,
     mapDispatchToProps
-)(withRouter(AddPost));
+)(AddPost));

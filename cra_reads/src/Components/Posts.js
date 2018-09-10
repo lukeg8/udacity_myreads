@@ -17,13 +17,8 @@ class Posts extends Component {
     componentDidMount() {
         this.getComments();
     }
-    componentDidUpdate(prevProps, prevState) {
-        if (prevProps.StateChange !== this.props.StateChange) {
-            this.getComments();
-        }
-    }
     render() {
-        const { comments } = this.state;
+        const  comments  = this.props.CommentsByPostID;
         const PostDisplay = <Post postID={this.props.match.params.urlPostID} />;
         const commentList = comments
             ? comments.map(comment => (
@@ -41,7 +36,16 @@ class Posts extends Component {
     }
 }
 
-function mapStateToProps({ StateChange }) {
-    return { StateChange };
+function mapStateToProps({ Comments }, { match }) {
+    const urlPostID = match.params.urlPostID;
+    const CommentsKeyArray = Object.keys(Comments);
+    const CommentsByPostIDArray = CommentsKeyArray.filter(
+        key =>
+            Comments[key]["parentId"] === urlPostID && !Comments[key]["deleted"]
+    );
+    const CommentsByPostID = CommentsByPostIDArray.map(key => Comments[key]);
+    return {
+        CommentsByPostID
+    };
 }
 export default connect(mapStateToProps)(Posts);

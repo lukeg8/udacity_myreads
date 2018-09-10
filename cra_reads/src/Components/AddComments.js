@@ -1,10 +1,9 @@
 import React, { Component } from "react";
 import uuidv4 from "uuid/v4";
 import { withRouter } from "react-router-dom";
-import { addCommentToPost } from "../utils/API";
-import { toggleStateChange } from "../Actions/StateChange";
 import { bindActionCreators } from "redux";
 import { connect } from "react-redux";
+import { _addCommentToPost } from "../Actions/Comments";
 
 import styled from "react-emotion";
 
@@ -48,11 +47,13 @@ class AddComments extends Component {
             timestamp: Date.now(),
             body: this.state.body,
             author: this.state.author,
-            parentId: this.props.match.params.urlPostID
+            parentId: this.props.match.params.urlPostID,
+            voteScore: 1,
+            deleted: false,
+            parentDeleted: false
         };
-        addCommentToPost(commentObj).then(() => {
+        this.props._addCommentToPost(commentObj).then(() => {
             this.clearState();
-            this.props.toggleStateChange();
         });
     };
     render() {
@@ -93,7 +94,10 @@ class AddComments extends Component {
 }
 
 function mapDispatchToProps(dispatch) {
-    return bindActionCreators({ toggleStateChange }, dispatch);
+    return bindActionCreators(
+        { _addCommentToPost },
+        dispatch
+    );
 }
 export default connect(
     null,

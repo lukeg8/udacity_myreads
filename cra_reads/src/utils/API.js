@@ -172,8 +172,8 @@ export const voteCommentDown = async commentId => {
 //     body: "SOME STRANGE BODY IN COMMENT"
 // };
 
-export const editComment = async (postId, commentObj) => {
-    const response = await fetch(`${URL}/comments/${postId}`, {
+export const editComment = async (commentId, commentObj) => {
+    const response = await fetch(`${URL}/comments/${commentId}`, {
         ...PUTheaders,
         body: JSON.stringify(commentObj)
     });
@@ -182,8 +182,8 @@ export const editComment = async (postId, commentObj) => {
     return data;
 };
 
-export const deleteComment = async postid => {
-    const response = await fetch(`${URL}/comments/${postid}`, DELETEheaders);
+export const deleteComment = async commentId => {
+    const response = await fetch(`${URL}/comments/${commentId}`, DELETEheaders);
     const data = await response.json();
     // console.log(data);
     return data;
